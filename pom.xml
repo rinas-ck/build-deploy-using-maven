@@ -13,7 +13,7 @@
         <repository>
             <id>github</id>
             <name>GitHub Packages</name>
-            <url>https://github.com/rinas-ck/build-deploy-using-maven.git</url>
+            <url>https://maven.pkg.github.com/rinas-ck/build-deploy-using-maven</url>
         </repository>
     </distributionManagement>
 
