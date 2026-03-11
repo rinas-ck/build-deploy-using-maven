@@ -16,9 +16,16 @@ pipeline {
         }
 
         stage('Deploy') {
-            steps {
-                sh 'cp target/*.jar /opt/app/'
-            }
-        }
+    steps {
+        sh '''
+        sudo mkdir -p /opt/app
+        sudo cp target/*.jar /opt/app/
+
+        cd /opt/app
+        JAR=$(ls *.jar | head -n 1)
+        nohup java -jar $JAR > app.log 2>&1 &
+        '''
+    }
+}
     }
 }
