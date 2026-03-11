@@ -1,30 +1,43 @@
 pipeline {
     agent any
 
-    environment {
-        GITHUB_CREDS = credentials('github-packages-cred')
-        MAVEN_HOME   = tool name: 'maven'
-        PATH         = "${JAVA_HOME}/bin:${PATH}"
+    tools {
+        maven 'maven-3.9'
+        jdk 'JDK17'
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                checkout scm
+                git branch: 'main',
+                    url: 'https://github.com/rinas-ck/build-deploy-using-maven.git'
             }
         }
 
-        stage('Build & Deploy') {
+        stage('Build') {
             steps {
-                configFileProvider([configFile(fileId: 'maven-github-settings', variable: 'MAVEN_SETTINGS')]) {
-                    sh """
-                        export GH_USER=${GITHUB_CREDS_USR}
-                        export GH_TOKEN=${GITHUB_CREDS_PSW}
+                sh 'mvn clean package'
+            }
+        }
 
-                        ${MAVEN_HOME}/bin/mvn -s $MAVEN_SETTINGS -B clean package
-                        ${MAVEN_HOME}/bin/mvn -s $MAVEN_SETTINGS -B deploy
-                    """
+        stage('Deploy to EC2') {
+            steps {
+                sshagent(['ec2-ssh-key']) {
+                    sh '''
+                        echo "Copying artifact to EC2..."
+                        scp -o StrictHostKeyChecking=no \
+                            target/demo-1.0.0.jar \
+                            ubuntu@13.61.19.22:/opt/app/
+
+                        echo "Starting application on EC2..."
+                        ssh -T -o StrictHostKeyChecking=no ubuntu@<EC2_PUBLIC_IP> '
+                            pkill -f demo-1.0.0.jar || true
+                            setsid nohup java -jar /opt/app/demo-1.0.0.jar \
+                                > /opt/app/app.log 2>&1 < /dev/null &
+                            exit 0
+                        '
+                    '''
                 }
             }
         }
@@ -32,10 +45,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build and deployment to GitHub Packages completed successfully."
+            echo "Deployment completed successfully."
         }
         failure {
-            echo "❌ Pipeline failed. Check the console output for details."
+            echo "Deployment failed. Check Jenkins or EC2 logs."
         }
     }
 }
