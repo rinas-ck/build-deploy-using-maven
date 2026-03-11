@@ -24,8 +24,9 @@ pipeline {
         cd /opt/app
         JAR=$(ls *.jar | head -n 1)
         nohup java -jar $JAR > app.log 2>&1 &
-        '''
+    #hii    '''
     }
+    
 }
     }
 }
