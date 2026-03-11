@@ -5,7 +5,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/rinas-ck/build-deploy-using-maven.git'
+                git branch: 'main', url: 'https://github.com/rinas-ck/build-deploy-using-maven.git'
             }
         }
 
